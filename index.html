@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cardiff — Personal Health Dashboard</title>
+  <meta name="description" content="Cardiff is a personal iOS health dashboard that consolidates lab results, vital signs, workouts, weight, and nutrition into a single timeline." />
+  <style>
+    :root {
+      --bg: #fbf6e8;
+      --ink: #2a2218;
+      --ink-soft: #5a4d3a;
+      --rule: rgba(120, 95, 60, 0.18);
+      --accent: #5b3a8a;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 56px 28px 80px;
+    }
+    header {
+      margin-bottom: 48px;
+    }
+    .brand {
+      display: inline-block;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #fbf6e8;
+      font-family: "Faster One", "Times New Roman", serif;
+      font-weight: 700;
+      font-size: 28px;
+      text-align: center;
+      line-height: 44px;
+      margin-bottom: 18px;
+    }
+    h1 {
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 38px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      margin: 0 0 8px;
+    }
+    .tagline {
+      color: var(--ink-soft);
+      font-size: 17px;
+      margin: 0;
+    }
+    section {
+      margin-top: 40px;
+      padding-top: 32px;
+      border-top: 1px solid var(--rule);
+    }
+    section:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+    h2 {
+      font-family: "Times New Roman", Georgia, serif;
+      font-size: 22px;
+      font-weight: 400;
+      margin: 0 0 12px;
+      color: var(--ink);
+    }
+    p, li {
+      font-size: 15px;
+      color: var(--ink);
+    }
+    ul {
+      padding-left: 22px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    code {
+      background: rgba(120, 95, 60, 0.10);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: "JetBrains Mono", Menlo, monospace;
+    }
+    a {
+      color: var(--accent);
+    }
+    footer {
+      margin-top: 56px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="brand">C</div>
+      <h1>Cardiff</h1>
+      <p class="tagline">A personal iOS health dashboard.</p>
+    </header>
+
+    <section>
+      <h2>What it is</h2>
+      <p>
+        Cardiff is a single-user iOS app that consolidates personal health
+        signals — lab results, vital signs, workouts, weight, and nutrition —
+        into one timeline so trends are easier to see across categories.
+      </p>
+      <p>
+        It is built for personal use by the developer. There is no multi-user
+        product, no marketplace, no advertising, and no third-party data
+        sharing.
+      </p>
+    </section>
+
+    <section>
+      <h2>Health data Cardiff accesses</h2>
+      <ul>
+        <li>
+          <strong>HealthKit standard data</strong> — heart rate samples
+          recorded by Apple Watch during a workout (read-only).
+        </li>
+        <li>
+          <strong>HealthKit Clinical Health Records</strong> — lab results
+          (<code>HKClinicalTypeIdentifierLabResultRecord</code>) and vital
+          signs (<code>HKClinicalTypeIdentifierVitalSignRecord</code>) imported
+          into iOS Health from the user's healthcare provider (Sutter Health,
+          via Epic FHIR R4). Cardiff queries these records, parses the FHIR
+          Observation resources locally, and displays the results in a labs
+          timeline within the app.
+        </li>
+      </ul>
+      <p>
+        All HealthKit access is read-only. Cardiff does not write back to
+        HealthKit and does not request write permissions for clinical data.
+      </p>
+    </section>
+
+    <section>
+      <h2>How data is stored</h2>
+      <p>
+        Health records read from HealthKit are stored in the user's own
+        Supabase Postgres instance. Each table enforces row-level security
+        (<code>auth.uid() = user_id</code>), meaning only the authenticated
+        owner of the data can read or modify their own rows. The Supabase
+        instance is single-tenant (one user) and not exposed to any other
+        party.
+      </p>
+      <p>
+        No clinical data is transmitted to any third-party analytics service,
+        ad network, or external API. There is no telemetry, no event
+        tracking, and no cross-device sharing.
+      </p>
+    </section>
+
+    <section>
+      <h2>Third-party services</h2>
+      <ul>
+        <li>
+          <strong>Supabase</strong> — application database (Postgres) and
+          authentication. The user owns the project.
+        </li>
+        <li>
+          <strong>Anthropic Claude API</strong> — used optionally for
+          natural-language summaries of workout history. Only workout
+          metadata (exercise name, set count, dates) is sent. Clinical
+          health records are never sent to Claude.
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Privacy summary</h2>
+      <ul>
+        <li>Read-only access to HealthKit data.</li>
+        <li>Data stored only in the user's own Supabase instance.</li>
+        <li>No third-party analytics, advertising, or tracking.</li>
+        <li>Clinical data never sent to external APIs (including Claude).</li>
+        <li>Data can be deleted at any time by the user from within the app or via Supabase.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Contact</h2>
+      <p>
+        Aaron Rowley · <a href="mailto:aaron.rowley@gmail.com">aaron.rowley@gmail.com</a>
+      </p>
+    </section>
+
+    <footer>
+      Cardiff is a personal project. It is not affiliated with Sutter Health,
+      Epic, Apple, or any healthcare provider.
+    </footer>
+  </main>
+</body>
+</html>
