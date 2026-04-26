@@ -126,56 +126,90 @@
 
     <section>
       <h2>Health data Cardiff accesses</h2>
+      <p><strong>Read access (HealthKit):</strong></p>
       <ul>
         <li>
-          <strong>HealthKit standard data</strong> — heart rate samples
-          recorded by Apple Watch during a workout (read-only).
+          <strong>Clinical Health Records</strong> — lab results
+          (<code>HKClinicalTypeIdentifierLabResultRecord</code>) and vital
+          signs (<code>HKClinicalTypeIdentifierVitalSignRecord</code>)
+          imported into iOS Health from the user's healthcare provider
+          (Sutter Health, via Epic FHIR R4). Cardiff queries these records,
+          parses the FHIR Observation resources locally, and displays the
+          results in a labs timeline within the app.
         </li>
         <li>
-          <strong>HealthKit Clinical Health Records</strong> — lab results
-          (<code>HKClinicalTypeIdentifierLabResultRecord</code>) and vital
-          signs (<code>HKClinicalTypeIdentifierVitalSignRecord</code>) imported
-          into iOS Health from the user's healthcare provider (Sutter Health,
-          via Epic FHIR R4). Cardiff queries these records, parses the FHIR
-          Observation resources locally, and displays the results in a labs
-          timeline within the app.
+          <strong>Workout heart rate</strong> — heart rate samples recorded
+          by Apple Watch during a workout, used to render the in-session
+          live HR overlay and post-session HR chart.
+        </li>
+      </ul>
+      <p><strong>Write access (HealthKit):</strong></p>
+      <ul>
+        <li>
+          <strong>Workouts</strong> — sessions logged in Cardiff (exercise,
+          sets, duration, heart rate) are written back as HKWorkout samples
+          so the iOS Health app reflects the user's training history.
+        </li>
+        <li>
+          <strong>Active energy burned</strong> — calories estimated from
+          logged workouts.
+        </li>
+        <li>
+          <strong>Dietary energy consumed</strong> — calories from food log
+          entries.
+        </li>
+        <li>
+          <strong>Body weight</strong> — weigh-ins recorded in the app.
         </li>
       </ul>
       <p>
-        All HealthKit access is read-only. Cardiff does not write back to
-        HealthKit and does not request write permissions for clinical data.
+        Cardiff does <strong>not</strong> write to Clinical Health Records.
+        HealthKit reserves clinical record writes for healthcare providers,
+        and Cardiff's clinical access is read-only by design.
       </p>
     </section>
 
     <section>
       <h2>How data is stored</h2>
       <p>
-        Health records read from HealthKit are stored in the user's own
-        Supabase Postgres instance. Each table enforces row-level security
-        (<code>auth.uid() = user_id</code>), meaning only the authenticated
-        owner of the data can read or modify their own rows. The Supabase
-        instance is single-tenant (one user) and not exposed to any other
-        party.
+        Data read from HealthKit is stored in a private cloud database
+        owned by the user (Postgres with row-level security). Every table
+        enforces an <code>auth.uid() = user_id</code> policy so that only
+        the authenticated owner of the data can read or modify their own
+        rows. There is no shared multi-tenant pool of user data and no
+        cross-user access.
       </p>
       <p>
-        No clinical data is transmitted to any third-party analytics service,
-        ad network, or external API. There is no telemetry, no event
-        tracking, and no cross-device sharing.
+        There is no telemetry, no event tracking, no advertising network,
+        and no analytics SDK. Data is never sold, shared, or transmitted
+        to any third party except in the explicitly user-initiated cases
+        described in the next section.
       </p>
     </section>
 
     <section>
       <h2>Third-party services</h2>
+      <p>
+        Cardiff transmits data to two external services. Both are
+        single-purpose, both are scoped to direct user actions, and
+        neither is used for advertising or analytics.
+      </p>
       <ul>
         <li>
-          <strong>Supabase</strong> — application database (Postgres) and
-          authentication. The user owns the project.
+          <strong>Cloud database (Postgres + auth)</strong> — used to store
+          the user's own data. The project is owned by the user.
         </li>
         <li>
-          <strong>Anthropic Claude API</strong> — used optionally for
-          natural-language summaries of workout history. Only workout
-          metadata (exercise name, set count, dates) is sent. Clinical
-          health records are never sent to Claude.
+          <strong>Anthropic Claude API</strong> — used optionally when the
+          user invokes an AI guidance feature in the app, to provide
+          personalized summaries and suggestions across the user's
+          training, nutrition, and (when the user opts in) lab and vital
+          sign history. Data is sent only when the user explicitly
+          triggers an AI feature — nothing is transmitted in the
+          background. The user can disable AI features at any time, and
+          can choose which categories of data each feature is allowed to
+          include. Per Anthropic's API policy, prompts and responses sent
+          via the API are not used to train Anthropic models.
         </li>
       </ul>
     </section>
@@ -183,11 +217,26 @@
     <section>
       <h2>Privacy summary</h2>
       <ul>
-        <li>Read-only access to HealthKit data.</li>
-        <li>Data stored only in the user's own Supabase instance.</li>
-        <li>No third-party analytics, advertising, or tracking.</li>
-        <li>Clinical data never sent to external APIs (including Claude).</li>
-        <li>Data can be deleted at any time by the user from within the app or via Supabase.</li>
+        <li>
+          HealthKit data is read with explicit user consent; clinical
+          records are read-only.
+        </li>
+        <li>
+          Data is stored only in the user's own private database with
+          row-level security.
+        </li>
+        <li>
+          No advertising, analytics, telemetry, or third-party tracking.
+        </li>
+        <li>
+          Data is sent to the Claude API only when the user explicitly
+          invokes an AI feature, and the user controls which categories
+          can be included.
+        </li>
+        <li>
+          Data can be deleted by the user from within the app or directly
+          via the database project.
+        </li>
       </ul>
     </section>
 
